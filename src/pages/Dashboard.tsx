@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { SectionCard } from "@/components/dashboard/SectionCard";
-import { DollarSign, Users, TrendingDown, Target, Gauge, Zap } from "lucide-react";
+import { DollarSign, Users, TrendingDown, Target, Gauge, Zap, Activity, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { useLiveCounters, useLiveDecisions } from "@/lib/use-live-data";
+import { cn } from "@/lib/utils";
 
 const revenueData = Array.from({ length: 12 }, (_, i) => ({
   month: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i],
@@ -31,6 +33,8 @@ const tooltipStyle = {
 
 export default function Dashboard() {
   const [auto, setAuto] = useState(82.4);
+  const counters = useLiveCounters();
+  const decisions = useLiveDecisions();
 
   useEffect(() => {
     toast.success("Lead Scoring model exceeded target", {
@@ -165,6 +169,82 @@ export default function Dashboard() {
             </div>
           </SectionCard>
         </div>
+
+        {/* Live counters strip */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: "Leads scored today", value: counters.leadsScoredToday.toLocaleString(), icon: Users, accent: "text-primary" },
+            { label: "Decisions executed", value: counters.decisionsExecutedToday.toLocaleString(), icon: Zap, accent: "text-accent" },
+            { label: "Revenue lift today", value: `$${(counters.revenueLiftToday / 1000).toFixed(1)}K`, icon: DollarSign, accent: "text-success" },
+            { label: "Accounts retained", value: counters.accountsRetained.toString(), icon: Activity, accent: "text-warning" },
+          ].map((c) => (
+            <div key={c.label} className="glass-card rounded-xl p-4 flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-secondary/60 flex items-center justify-center">
+                <c.icon className={cn("h-4 w-4", c.accent)} />
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{c.label}</div>
+                <div className="text-xl font-bold font-mono tabular-nums">{c.value}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Live decisions stream */}
+        <SectionCard
+          title="Live Decision Stream"
+          description="Last 10 decisions emitted by the engine"
+          action={
+            <Badge variant="outline" className="border-primary/40 text-primary gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+              Streaming
+            </Badge>
+          }
+        >
+          <div className="overflow-x-auto -mx-5">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border/60">
+                  <th className="text-left font-medium py-2 px-5">Time</th>
+                  <th className="text-left font-medium py-2">Account</th>
+                  <th className="text-left font-medium py-2">Engine</th>
+                  <th className="text-left font-medium py-2">Action</th>
+                  <th className="text-right font-medium py-2">Confidence</th>
+                  <th className="text-right font-medium py-2">Impact</th>
+                  <th className="text-right font-medium py-2 px-5">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {decisions.slice(0, 10).map((d) => {
+                  const time = new Date(d.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+                  const StatusIcon = d.status === "executed" ? CheckCircle2 : d.status === "queued" ? Clock : AlertCircle;
+                  const statusColor =
+                    d.status === "executed" ? "text-success" : d.status === "queued" ? "text-primary" : "text-warning";
+                  return (
+                    <tr key={d.id} className="border-b border-border/30 hover:bg-secondary/30 transition-smooth">
+                      <td className="py-2.5 px-5 font-mono text-muted-foreground">{time}</td>
+                      <td className="py-2.5 font-medium">{d.account}</td>
+                      <td className="py-2.5">
+                        <Badge variant="outline" className="text-[10px] border-border">{d.engine}</Badge>
+                      </td>
+                      <td className="py-2.5 text-muted-foreground">{d.action}</td>
+                      <td className="py-2.5 text-right font-mono tabular-nums">{(d.confidence * 100).toFixed(1)}%</td>
+                      <td className="py-2.5 text-right font-mono tabular-nums text-success">
+                        +${d.impact.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      </td>
+                      <td className="py-2.5 px-5 text-right">
+                        <span className={cn("inline-flex items-center gap-1.5 text-[11px] font-medium", statusColor)}>
+                          <StatusIcon className="h-3 w-3" />
+                          {d.status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </SectionCard>
       </div>
     </AppLayout>
   );
