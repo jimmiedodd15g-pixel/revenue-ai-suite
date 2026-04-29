@@ -3,6 +3,15 @@ import { SectionCard } from "@/components/dashboard/SectionCard";
 import { Badge } from "@/components/ui/badge";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { cn } from "@/lib/utils";
+import { riskAccounts } from "@/lib/mock-data";
+
+const riskColor: Record<string, string> = {
+  Critical: "bg-destructive/15 text-destructive border-destructive/40",
+  High: "bg-chart-5/15 text-chart-5 border-chart-5/40",
+  Medium: "bg-warning/15 text-warning border-warning/40",
+  Low: "bg-chart-1/15 text-chart-1 border-chart-1/40",
+  "Very Low": "bg-success/15 text-success border-success/40",
+};
 
 const shapley = [
   { feature: "Credit Score", value: 0.67 },
@@ -147,6 +156,60 @@ export default function RiskAnalysis() {
                 </div>
               </div>
             ))}
+          </div>
+        </SectionCard>
+
+        <SectionCard
+          title="Top Risk Accounts"
+          description="Ranked by Shapley-weighted PQ Score"
+          action={<Badge variant="outline" className="border-warning/40 text-warning">{riskAccounts.length} accounts</Badge>}
+        >
+          <div className="overflow-x-auto -mx-5">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border/60">
+                  <th className="text-left font-medium py-2 px-5">Account</th>
+                  <th className="text-left font-medium py-2">Segment</th>
+                  <th className="text-right font-medium py-2">ARR</th>
+                  <th className="text-right font-medium py-2">PQ Score</th>
+                  <th className="text-left font-medium py-2 pl-4">Top Driver</th>
+                  <th className="text-left font-medium py-2">CSM</th>
+                  <th className="text-right font-medium py-2 px-5">Risk</th>
+                </tr>
+              </thead>
+              <tbody>
+                {riskAccounts.map((a) => (
+                  <tr key={a.id} className="border-b border-border/30 hover:bg-secondary/30 transition-smooth">
+                    <td className="py-2.5 px-5">
+                      <div className="font-medium">{a.name}</div>
+                      <div className="text-[10px] text-muted-foreground font-mono">{a.id}</div>
+                    </td>
+                    <td className="py-2.5 text-muted-foreground">{a.segment}</td>
+                    <td className="py-2.5 text-right font-mono tabular-nums">
+                      ${(a.arr / 1000).toFixed(0)}K
+                    </td>
+                    <td className="py-2.5 text-right">
+                      <div className="inline-flex items-center gap-2">
+                        <div className="w-16 h-1.5 rounded-full bg-secondary overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-success via-warning to-destructive"
+                            style={{ width: `${a.pqScore * 100}%` }}
+                          />
+                        </div>
+                        <span className="font-mono tabular-nums w-10">{a.pqScore.toFixed(2)}</span>
+                      </div>
+                    </td>
+                    <td className="py-2.5 pl-4 text-muted-foreground">{a.topDriver}</td>
+                    <td className="py-2.5">{a.csm}</td>
+                    <td className="py-2.5 px-5 text-right">
+                      <Badge variant="outline" className={cn("text-[10px]", riskColor[a.risk])}>
+                        {a.risk}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </SectionCard>
       </div>
