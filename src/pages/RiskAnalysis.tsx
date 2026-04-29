@@ -64,8 +64,8 @@ export default function RiskAnalysis() {
                     <div key={l} className="text-[10px] text-center text-muted-foreground font-medium">{l}</div>
                   ))}
                   {matrix.map((row, ri) => (
-                    <>
-                      <div key={`l-${ri}`} className="text-[10px] text-right pr-2 self-center text-muted-foreground font-medium">
+                    <div key={`row-${ri}`} className="contents">
+                      <div className="text-[10px] text-right pr-2 self-center text-muted-foreground font-medium">
                         {labels[4 - ri]}
                       </div>
                       {row.map((v, ci) => (
@@ -79,7 +79,7 @@ export default function RiskAnalysis() {
                           {v}
                         </div>
                       ))}
-                    </>
+                    </div>
                   ))}
                 </div>
                 <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-2 -rotate-90 origin-left absolute" style={{ display: "none" }}>
